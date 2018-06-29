@@ -7,7 +7,7 @@ all: preprocessing
 
 preprocessing: \
         $(OUTPUT)/pc_digraph.pkl \
-        $(OUTPUT)/pc_digraph_prior.pkl
+        $(OUTPUT)/pc_digraph_small.pkl
 
 $(BUILD)/pc_digraph.pkl: \
         $(OUTPUT)/PathwayCommons9.All.hgnc.txt \
