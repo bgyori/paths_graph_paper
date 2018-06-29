@@ -65,12 +65,12 @@ if __name__ == '__main__':
         prior_genes = [line.strip() for line in f.readlines()]
     # The full network, flattened
     pc_graph = load_pc_network(flatten=True)
-    pc_pickle = join(output_dir, 'pc_multidigraph.pkl')
+    pc_pickle = join(output_dir, 'pc_digraph.pkl')
     with open(pc_pickle, 'wb') as f:
         pickle.dump(pc_graph, f)
     # The filtered network, flattened
     pc_graph_filt = load_pc_network(flatten=True, filter_genes=prior_genes)
-    pc_pickle_filt = join(output_dir, 'pc_multidigraph_prior.pkl')
+    pc_pickle_filt = join(output_dir, 'pc_digraph_prior.pkl')
     with open(pc_pickle_filt, 'wb') as f:
         pickle.dump(pc_graph_filt, f)
 

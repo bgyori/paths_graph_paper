@@ -6,10 +6,10 @@ NET := networks
 all: preprocessing
 
 preprocessing: \
-        $(OUTPUT)/pc_multidigraph.pkl \
-        $(OUTPUT)/pc_multidigraph_prior.pkl
+        $(OUTPUT)/pc_digraph.pkl \
+        $(OUTPUT)/pc_digraph_prior.pkl
 
-$(BUILD)/pc_multidigraph.pkl: \
+$(BUILD)/pc_digraph.pkl: \
         $(OUTPUT)/PathwayCommons9.All.hgnc.txt \
         $(DATA)/prior_genes.txt
 	python preprocess_pc.py
