@@ -1,3 +1,4 @@
+*.pdf
 *.pkl
 output
 data/PathwayCommons9.All.hgnc.txt
