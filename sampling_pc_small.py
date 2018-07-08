@@ -22,15 +22,20 @@ def run_pg_vs_nx(graph, source, target, depth, num_samples):
                                    b_level)
         pg_list.append(pg)
     combined_pg = CombinedPathsGraph(pg_list)
+    print("Sampling from PG")
     cf_paths = combined_pg.sample_cf_paths(num_samples)
+    #cf_paths = []
     end = time.time()
-    print("Done sampling from PG")
+    #print("Done sampling from PG")
+    print("Done generating PGs")
     pg_elapsed = end - start
 
     # Networkx enumeration
     index = 0
     start = time.time()
     nx_paths = []
+    nx_sampled_paths = []
+    """
     for p in nx.all_simple_paths(graph, source, target, cutoff=depth):
         nx_paths.append(tuple(p))
         if index % 10000 == 0:
@@ -51,6 +56,7 @@ def run_pg_vs_nx(graph, source, target, depth, num_samples):
     print("PG time", pg_elapsed)
 
     nx_sampled_paths = []
+    """
     nx_elapsed = 0
     return {'pg_list': pg_list,
             'pg_paths': cf_paths,
@@ -84,10 +90,14 @@ def run_timing_comparison(min_depth, max_depth, num_reps, num_samples):
     plt.gca().set_yscale('log')
 
 
-def get_node_distribution(paths, n_length=1):
+def get_node_distribution(paths, source, target, n_length=1):
     dist = defaultdict(lambda: 0)
     for path in paths:
         for ix in range(len(path) - n_length + 1):
+            if n_length == 1 and \
+               (source is not None and target is not None) and \
+               (path[ix] == source or path[ix] == target):
+                continue
             ngram = path[ix:ix + n_length]
             dist[ngram] += 1
     pcts = []
@@ -98,55 +108,80 @@ def get_node_distribution(paths, n_length=1):
 
 if __name__ == '__main__':
     random.seed(1)
-    filename = join(output_dir, 'pc_digraph_small.pkl')
+    filename = join(output_dir, 'pc_digraph.pkl')
     with open(filename, 'rb') as f:
         graph = pickle.load(f)
 
     # Timing comparison
-    MAX_DEPTH = 4
+    MAX_DEPTH = 10
     #NUM_REPS = 20
     #run_timing_comparison(1, MAX_DEPTH, NUM_REPS, 10000)
 
     # Node distribution
-    source = 'EGFR'
-    target = 'MAPK1'
-    result = run_pg_vs_nx(graph, source, target, MAX_DEPTH, 1000)
-    with open('pc_egfr_mapk1_max4.pkl', 'wb') as f:
-        pickle.dump(result, f)
+    source = 'SRC'
+    target = 'CHEK2'
+    result = run_pg_vs_nx(graph, source, target, MAX_DEPTH, 10000)
+    #print("Pickling")
+    #with open('pc_egfr_mapk1_max%d.pkl' % MAX_DEPTH, 'wb') as f:
+    # pickle.dump(result, f)
 
-    """
-    with open('pc_egfr_mapk1_max4.pkl', 'wb') as f:
-        result = pickle.load(f)
-    """
+    #with open('egfr_mapk1_depth_10_result.pkl', 'rb') as f:
+    #    result = pickle.load(f)
+
+    path_counts = []
+    for pg in result['pg_list']:
+        path_counts.append(pg.count_paths())
     combined_pg = CombinedPathsGraph(result['pg_list'])
-    total_paths = combined_pg.count_paths()
+    total_paths = np.sum(path_counts)
+    print(path_counts)
+    print(total_paths)
+
+    # Plot num paths vs length
+    plt.show
+    plt.figure(figsize=(5,2), dpi=150)
+    ypos = list(range(1, MAX_DEPTH+1))
+    plt.bar(ypos, path_counts, align='center')
+    #plt.xticks(ypos, str_names[:num_genes], rotation='vertical')
+    ax = plt.gca()
+    plt.ylabel('Number of paths')
+    plt.xlabel('Path length')
+    ax.set_yscale('log')
+    #plt.subplots_adjust(bottom=0.3)
+    pf.format_axis(ax)
+    """
     cfpg_list = []
     total_cf_paths = 0
-    for pg in result['pg_list']:
+    for i, pg in enumerate(result['pg_list']):
+        print("Generating CFPG %d" % i)
         cfpg = CFPG.from_pg(pg)
         total_cf_paths += cfpg.count_paths()
     print("total paths (with cycles)", total_paths)
     print("total cycle-free paths", total_cf_paths)
-
-    node_dist = get_node_distribution(result['pg_paths'], 1)
-    names, freqs = zip(*node_dist)
-    num_genes = 40
-    plt.ion()
-    plt.figure()
-    ypos = range(num_genes)
-    plt.bar(ypos, freqs[:num_genes], align='center')
-    plt.xticks(ypos, names[:num_genes], rotation='vertical')
-    ax = plt.gca()
-    pf.format_axis(ax)
-
     """
+
     # Length distribution
     pg_path_lengths = Counter([len(p)-1 for p in result['pg_paths']])
-    nx_path_lengths = Counter([len(p)-1 for p in result['nx_paths']])
+    #nx_path_lengths = Counter([len(p)-1 for p in result['nx_paths']])
     lengths = range(1, MAX_DEPTH+1)
-    plt.ion()
-    plt.figure()
+    plt.figure(figsize=(5, 2), dpi=150)
     plt.bar(lengths, [pg_path_lengths.get(l, 0) for l in lengths])
-    plt.show()
-    """
+    plt.xlabel('Path length')
+    plt.ylabel('Number of paths')
+    ax.set_yscale('log')
+    #plt.subplots_adjust(bottom=0.3)
+    pf.format_axis(ax)
+
+    node_dist = get_node_distribution(result['pg_paths'], source, target, 1)
+    names, freqs = zip(*node_dist)
+    str_names = [', '.join(n) for n in names]
+    num_genes = 30
+    plt.ion()
+    plt.figure(figsize=(5,2), dpi=150)
+    ypos = np.array(range(num_genes)) * 1.0
+    plt.bar(ypos, freqs[:num_genes], align='center')
+    plt.xticks(ypos, str_names[:num_genes], rotation='vertical')
+    ax = plt.gca()
+    plt.ylabel('Frequency')
+    plt.subplots_adjust(bottom=0.3)
+    pf.format_axis(ax)
 
