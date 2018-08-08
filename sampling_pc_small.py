@@ -23,7 +23,10 @@ def run_pg_vs_nx(graph, source, target, depth, num_samples):
         pg_list.append(pg)
     combined_pg = CombinedPathsGraph(pg_list)
     print("Sampling from PG")
-    cf_paths = combined_pg.sample_cf_paths(num_samples)
+    cf_paths = []
+    while len(cf_paths) < num_samples:
+        cf_path_chunk = combined_pg.sample_cf_paths(100)
+        cfpc = CycleFreePathCount(
     #cf_paths = []
     end = time.time()
     #print("Done sampling from PG")
@@ -113,7 +116,7 @@ if __name__ == '__main__':
         graph = pickle.load(f)
 
     # Timing comparison
-    MAX_DEPTH = 10
+    MAX_DEPTH = 5
     #NUM_REPS = 20
     #run_timing_comparison(1, MAX_DEPTH, NUM_REPS, 10000)
 

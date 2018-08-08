@@ -29,9 +29,9 @@ def ag(gene_name):
     db_refs = {'HGNC': hgnc_id, 'UP': up_id}
     return Agent(gene_name, db_refs=db_refs)
 
-with open('korkut_pysb_model.pkl', 'rb') as f:
+with open('data/korkut_pysb_model.pkl', 'rb') as f:
     model = pickle.load(f)
-with open('korkut_model_pysb_before_pa.pkl', 'rb') as f:
+with open('data/korkut_model_pysb_before_pa.pkl', 'rb') as f:
     statements = pickle.load(f)
 
 st1 = Phosphorylation(ag('KRAS'), ag('MAPK1'), 'T', '185')
@@ -67,7 +67,7 @@ for s, freq in top_stmts:
     text = ea.make_model()
     desc.append((text, freq))
 for t, f in desc[:30]:
-    print('%s,%s' % (t, f)
+    print('%s,%s' % (t, f))
 
 """
 str_names, freqs = zip(*dist_filt)
@@ -81,5 +81,4 @@ ax = plt.gca()
 plt.ylabel('Frequency')
 plt.subplots_adjust(bottom=0.3)
 pf.format_axis(ax)
-
 """
