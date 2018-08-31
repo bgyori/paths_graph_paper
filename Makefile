@@ -5,6 +5,9 @@ NET := networks
 
 all: preprocessing toy_example
 
+deploy:
+	rsync -av $(OUTPUT)/* ../paths_graph_manuscript/figures/
+
 preprocessing: \
         $(OUTPUT)/pc_digraph.pkl \
         $(OUTPUT)/pc_digraph_small.pkl
@@ -18,3 +21,5 @@ toy_example: $(OUTPUT)/g.pdf
 
 $(OUTPUT)/g.pdf: toy_example.py
 	python toy_example.py $(OUTPUT)
+
+
