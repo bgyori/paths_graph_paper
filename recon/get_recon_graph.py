@@ -17,14 +17,7 @@ def get_combined_pg(rg, source, target, num_nodes):
     return combined_pg
 
 
-def get_recon_model(fname)
-    print(f'Loading SBML from {fname}')
-    sbml_doc = libsbml.readSBMLFromFile(fname)
-    model = sbml_doc.getModel()
-    return model
-
-
-def make_networkx_graph(model)
+def make_networkx_graph(model):
     reactions = model.getListOfReactions()
 
     print('Building NetworkX graph')
@@ -37,8 +30,25 @@ def make_networkx_graph(model)
     return G
 
 
+def prune_graph(G):
+    compartments = ['c', 'm', 'l', 'e', 'r']
+    blacklist = ['hco3', 'h2o', 'o2', 'h', 'nad', 'nadh', 'nadp', 'nadph',
+                 'adp', 'atp', 'na1']
+    for node in blacklist:
+        for comp in compartments:
+            print(f'{len(G.edges)} edges before removing {node}_{comp}')
+            try:
+                G.remove_node(f'M_{node}_{comp}')
+            except Exception:
+                pass
+            print(f'{len(G.edges)} edges after removing {node}_{comp}')
+
 
 if __name__ == '__main__':
-    model = get_recon_model(fname)
+    print(f'Loading SBML from {fname}')
+    sbml_doc = libsbml.readSBMLFromFile(fname)
+    model = sbml_doc.getModel()
     G = make_networkx_graph(model)
-    pg = get_combined_pg(G, 'M_arachd_c', 'M_C06315_c', 5)
+    prune_graph(G)
+    pg = get_combined_pg(G, 'M_glc_D_c', 'M_xylt_c', 25)
+
