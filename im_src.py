@@ -6,7 +6,7 @@ from indra.statements import *
 from matplotlib import pyplot as plt
 import numpy as np
 from indra.util import plot_formatting as pf
-from indra.assemblers import EnglishAssembler
+from indra.assemblers.english import EnglishAssembler
 
 from sampling_pc_small import get_node_distribution
 
