@@ -5,8 +5,11 @@ NET := networks
 
 all: preprocessing toy_example
 
+clean_toy_example:
+	rm -f $(OUTPUT)/toy_*.pdf
+
 deploy:
-	rsync -av $(OUTPUT)/* ../paths_graph_manuscript/figures/
+	rsync -av $(OUTPUT)/*.pdf ../paths_graph_manuscript/figures/
 
 preprocessing: \
         $(OUTPUT)/pc_digraph.pkl \
@@ -17,9 +20,9 @@ $(OUTPUT)/pc_digraph.pkl: \
         $(DATA)/prior_genes.txt
 	python preprocess_pc.py
 
-toy_example: $(OUTPUT)/g.pdf
+toy_example: $(OUTPUT)/toy_g.pdf
 
-$(OUTPUT)/g.pdf: toy_example.py
+$(OUTPUT)/toy_g.pdf: toy_example.py
 	python toy_example.py $(OUTPUT)
 
 

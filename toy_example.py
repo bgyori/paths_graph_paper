@@ -24,9 +24,10 @@ g_edges = [
 """
 g_edges = [
     ('S', 'A'), ('S', 'B'),
-    ('A', 'C'), ('A', 'T'),
+    ('A', 'C'), ('A', 'T'), ('A', 'D'),
     ('B', 'C'), ('B', 'T'),
     ('C', 'A'), ('C', 'B'),
+    ('D', 'C'),
 ]
 
 g = nx.DiGraph()
@@ -64,14 +65,14 @@ def draw_reachset(g, level, direction, depth, output_dir):
                 edges.append((prev_node, cur_node))
     graph = nx.DiGraph()
     graph.add_edges_from(edges)
-    draw(graph, join(output_dir, '%s_graph.pdf' % direction))
+    draw(graph, join(output_dir, 'toy_%s_graph.pdf' % direction))
 
 if __name__ == '__main__':
 
     output_dir = sys.argv[1]
 
     # Draw G
-    draw(g, join(output_dir, 'g.pdf'))
+    draw(g, join(output_dir, 'toy_g.pdf'))
 
     depth = 4
     source = 'S'
@@ -85,14 +86,14 @@ if __name__ == '__main__':
     print("b_level", b_level)
 
     pg = PathsGraph.from_graph(g, source, target, depth)
-    draw(pg.graph, join(output_dir, 'pg_%d.pdf' % depth))
+    draw(pg.graph, join(output_dir, 'toy_pg_%d.pdf' % depth))
 
     # Combined paths graph
     pg_list = []
-    for i in range(1, 6+1):
+    for i in range(1, 4+1):
         pg_list.append(PathsGraph.from_graph(g, source, target, i))
     cpg = CombinedPathsGraph(pg_list)
-    draw(cpg.graph, join(output_dir, 'combined_pg.pdf'))
+    draw(cpg.graph, join(output_dir, 'toy_combined_pg.pdf'))
 
     # Cycle-free paths graph
     cfpg = CFPG.from_pg(pg)
@@ -106,7 +107,7 @@ if __name__ == '__main__':
         cfpg_edges_fixed.append((u_fixed, v_fixed))
     cfpg_fixed = nx.DiGraph()
     cfpg_fixed.add_edges_from(cfpg_edges_fixed)
-    draw(cfpg_fixed, join(output_dir, 'cfpg_%d.pdf' % depth))
+    draw(cfpg_fixed, join(output_dir, 'toy_cfpg_%d.pdf' % depth))
 
     # Non-uniform sampling
     # Graph for testing sampling uniformly vs. non-uniformly
@@ -117,5 +118,5 @@ if __name__ == '__main__':
         ('A2', 'B2'), ('A2', 'B3'), ('A2', 'B4'), ('A2', 'B5'),
         ('B1', 'T'),
         ('B2', 'T'), ('B3', 'T'), ('B4', 'T'), ('B5', 'T')])
-    draw(g_samp, join(output_dir, 'g_samp.pdf'))
+    draw(g_samp, join(output_dir, 'toy_g_samp.pdf'))
 
