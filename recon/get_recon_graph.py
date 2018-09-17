@@ -44,6 +44,18 @@ def prune_graph(G):
             print(f'{len(G.edges)} edges after removing {node}_{comp}')
 
 
+def draw_paths(paths):
+    vis_g = networkx.DiGraph()
+    for path in paths:
+        for s, t in zip(path[:-1], path[1:]):
+            vis_g.add_edge(s, t)
+    ag = networkx.nx_agraph.to_agraph(vis_g)
+    # Add some visual styles to the graph
+    ag.node_attr['shape'] = 'plaintext'
+    ag.node_attr['rankdir'] = 'LR'
+    ag.draw('vis_g.pdf', prog='dot')
+
+
 if __name__ == '__main__':
     print(f'Loading SBML from {fname}')
     sbml_doc = libsbml.readSBMLFromFile(fname)
@@ -51,4 +63,4 @@ if __name__ == '__main__':
     G = make_networkx_graph(model)
     prune_graph(G)
     pg = get_combined_pg(G, 'M_glc_D_c', 'M_xylt_c', 25)
-
+    path_set = set(pg.sample_paths(1000))
