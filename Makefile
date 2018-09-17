@@ -12,10 +12,6 @@ deploy:
 	rsync -av $(OUTPUT)/*.pdf ../paths_graph_manuscript/figures/
 
 preprocessing: \
-        $(OUTPUT)/pc_digraph.pkl \
-        $(OUTPUT)/pc_digraph_small.pkl
-
-$(OUTPUT)/pc_digraph.pkl: \
         $(DATA)/PathwayCommons9.All.hgnc.txt \
         $(DATA)/prior_genes.txt
 	python preprocess_pc.py
