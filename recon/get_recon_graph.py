@@ -1,3 +1,4 @@
+import time
 import libsbml
 import networkx
 from paths_graph import PathsGraph, CombinedPathsGraph, get_reachable_sets
@@ -34,14 +35,14 @@ def prune_graph(G):
     compartments = ['c', 'm', 'l', 'e', 'r']
     blacklist = ['hco3', 'h2o', 'o2', 'h', 'nad', 'nadh', 'nadp', 'nadph',
                  'adp', 'atp', 'na1']
+    print(f'{len(G.edges)} edges before pruning')
     for node in blacklist:
         for comp in compartments:
-            print(f'{len(G.edges)} edges before removing {node}_{comp}')
             try:
                 G.remove_node(f'M_{node}_{comp}')
             except Exception:
                 pass
-            print(f'{len(G.edges)} edges after removing {node}_{comp}')
+    print(f'{len(G.edges)} edges after pruning')
 
 
 def draw_paths(paths):
@@ -56,11 +57,34 @@ def draw_paths(paths):
     ag.draw('vis_g.pdf', prog='dot')
 
 
+def get_pg_paths(G, source, target, max_len, num_sample):
+    ts = time.time()
+    pg = get_combined_pg(G, source, target, max_len)
+    paths = pg.sample_paths(num_sample)
+    te = time.time()
+    print(f'Got {num_sample} paths in {te-ts} seconds.')
+    return paths
+
+
+def get_nx_paths(G, source, target, max_len, num_sample):
+    ts = time.time()
+    path_gen = networkx.shortest_simple_paths(G, source, target)
+    paths = []
+    for idx, path in enumerate(path_gen):
+        if idx >= num_sample:
+            break
+        if len(path) > max_len:
+            break
+        paths.append(tuple(path))
+    te = time.time()
+    print(f'Got {num_sample} paths in {te-ts} seconds.')
+    return paths
+
 if __name__ == '__main__':
     print(f'Loading SBML from {fname}')
     sbml_doc = libsbml.readSBMLFromFile(fname)
     model = sbml_doc.getModel()
     G = make_networkx_graph(model)
     prune_graph(G)
-    pg = get_combined_pg(G, 'M_glc_D_c', 'M_xylt_c', 25)
-    path_set = set(pg.sample_paths(1000))
+    pg_paths = get_pg_paths(G, 'M_glc_D_c', 'M_xylt_c', 30, 1000)
+    nx_paths = get_nx_paths(G, 'M_glc_D_c', 'M_xylt_c', 30, 1000)
