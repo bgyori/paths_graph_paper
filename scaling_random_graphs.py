@@ -84,6 +84,7 @@ if __name__ == '__main__':
     start = time.time()
     print("Enumerating paths")
     paths = list(nx.all_simple_paths(rg, source, target))
+    print("Done enumerating paths")
     pt = PathsTree(paths)
     path_probs = pt.path_probabilities()
     end = time.time()

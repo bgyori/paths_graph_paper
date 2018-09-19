@@ -20,7 +20,7 @@ if __name__ == '__main__':
     depths = [4]
     results = np.empty((2, len(depths), NUM_REPS))
     random.seed(1)
-    genes = graph.nodes()
+    genes = list(graph.nodes())
     for depth_ix, depth in enumerate(depths):
         print(depth)
         for rep_ix in range(NUM_REPS):
