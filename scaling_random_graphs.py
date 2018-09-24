@@ -49,6 +49,7 @@ def scaling_random_graphs(num_samples, min_size, max_size, edge_prob=0.5):
             end = time.time()
             elapsed = end - start
             times_nx_paths[i, j] = elapsed
+            print(f'NX: {elapsed:.2f}s')
 
             # Time to compute paths_graphs and make combined graph
             pg_start = time.time()
@@ -62,18 +63,20 @@ def scaling_random_graphs(num_samples, min_size, max_size, edge_prob=0.5):
             # NOTE: no count_paths method
             total_paths = combined_pg.count_paths()
             print(f'Total paths (with cycles): {total_paths}')
-
-            #cf_paths = combined_pg.sample_cf_paths(100000)
+            cf_paths = combined_pg.sample_cf_paths(10000)
             pg_elapsed = time.time() - pg_start
             times_pg[i, j] = pg_elapsed
+            print(f'PG: {pg_elapsed:.2f}s')
 
             # Now compute the CFPG
             cfpg_list = []
             for pg in pg_list:
                 cfpg = CFPG.from_pg(pg)
                 cfpg_list.append(cfpg)
+            cfpg_paths = cfpg.sample_paths(10000)
             cfpg_elapsed = time.time() - pg_start
             times_cfpg[i, j] = cfpg_elapsed
+            print(f'CF: {cfpg_elapsed:.2f}s')
     return times_nx_paths, times_pg, times_cfpg
 
 
