@@ -25,8 +25,8 @@ def run_pg_vs_nx(graph, source, target, depth, num_samples):
     print("Sampling from PG")
     cf_paths = []
     while len(cf_paths) < num_samples:
-        cf_path_chunk = combined_pg.sample_cf_paths(100)
-        cfpc = CycleFreePathCount(
+        print(f'{len(cf_paths)} / {num_samples}')
+        cf_path_chunk = combined_pg.sample_paths(100)
     #cf_paths = []
     end = time.time()
     #print("Done sampling from PG")
