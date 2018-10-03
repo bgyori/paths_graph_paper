@@ -8,6 +8,7 @@ import time
 import itertools
 import numpy as np
 import networkx as nx
+import multiprocessing as mp
 from matplotlib import pyplot as plt
 from paths_graph import PathsGraph, get_reachable_sets, CFPG, \
                         CombinedPathsGraph, PathsTree, CombinedCFPG
@@ -29,7 +30,9 @@ def run_nx(rg, source, target):
     start = time.time()
     paths = [tuple(p) for p in nx.all_simple_paths(rg, source, target)]
     #paths2 = [tuple(p) for p in nx.shortest_simple_paths(rg, source, target)]
-    #assert(set(paths) == set(paths2))
+
+    """
+    # This approach uses PathTrees
     mid = time.time()
     print(f'NX: {(mid-start):.2f}s')
     print(f'NX found {len(paths)} paths')
@@ -38,6 +41,26 @@ def run_nx(rg, source, target):
     path_probs = pt.path_probabilities()
     pr = np.sum([w*exists_property(p, 5) for p, w in path_probs.items()])
     print(f'NX prob {pr}')
+    """
+
+    print('Sampling NX')
+    ht = HypothesisTester(0.5, 0.1, 0.1, 0.05)
+    tf = None
+    tfs = []
+    nsamples = 0
+    batch = 10
+    while tf is None:
+        if len(paths) == 0:
+            tf = 0
+            break
+        new_idx = np.random.choice(range(len(paths)), size=batch,
+                                   replace=True)
+        new_paths = [paths[i] for i in new_idx]
+        tfs += [exists_property(p, 5) for p in new_paths]
+        nsamples += batch
+        tf = ht.test(tfs)
+    print(f'NX: {tf} based on {nsamples} samples')
+
     # Save the time it took the calculate
     end = time.time()
     print(f'NX: {(end-start):.2f}s')
@@ -46,11 +69,12 @@ def run_nx(rg, source, target):
 
 
 def run_pg_cfpg(rg, source, target):
+    num_nodes = len(rg)
     # Time to compute paths_graphs and make combined graph
     pg_start = time.time()
     f_level, b_level = get_reachable_sets(rg, source, target, num_nodes)
     pg_list = []
-    for length in range(1, num_nodes):
+    for length in range(1,  num_nodes):
         pg = PathsGraph.from_graph(rg, source, target, length,
                                    f_level, b_level)
         pg_list.append(pg)
@@ -108,18 +132,6 @@ def run_pg_cfpg(rg, source, target):
     return pg_elapsed, cfpg_elapsed
 
 
-def scaling_random_graphs(num_samples, min_size, max_size, edge_prob=0.5):
-    # Iterate over number of nodes in network
-    for i, num_nodes in enumerate(range(min_size, max_size+1)):
-        print(f'Number of nodes in network: {num_nodes}')
-
-        # Iterate over num_samples random graphs of this size
-        for j in range(num_samples):
-            print(f'Sample {j}')
-
-    return times_nx_paths, times_pg, times_cfpg
-
-
 def to_directed(G):
     DG = nx.DiGraph()
     for u, v in G.edges():
@@ -130,7 +142,7 @@ def to_directed(G):
 
 def run_all(rg, source, target, num_nodes):
     times = np.zeros(3)
-    if num_nodes < 15:
+    if num_nodes < 20:
         # Run NX
         nx_elapsed = run_nx(rg, source, target)
         times[0] = nx_elapsed
@@ -140,16 +152,42 @@ def run_all(rg, source, target, num_nodes):
     times[2] = cfpg_elapsed
     return times
 
+
+def random_fixed_edge_num(num_nodes, ratio):
+    # Set of all possible edges
+    edge_set = [(u, v) for (u, v) in
+                itertools.product(range(num_nodes),
+                                  range(num_nodes)) if u != v]
+    num_edges = int(np.ceil(num_nodes * (num_nodes - 1) * ratio))
+    idx_sampled = np.random.choice(range(len(edge_set)), num_edges,
+                                   replace=False)
+    edges_sampled = [edge_set[i] for i in idx_sampled]
+    G = nx.DiGraph()
+    G.add_edges_from(edges_sampled)
+    return G
+
+
+def one_sample(rg):
+    source = 0
+    target = len(rg) - 1
+    # Get all times
+    sample_times = run_all(rg, source, target, len(rg))
+    return sample_times
+
+
 if __name__ == '__main__':
     # Some basic parameters
     min_size = 6
     max_size = 15
-    num_samples = 100
+    num_samples = 8
+
+    pool = mp.Pool(processes=4)
 
     lengths = range(min_size, max_size+1)
     graph_types = [
-        lambda x: nx.erdos_renyi_graph(x, 0.5, directed=True),
+        # lambda x: nx.erdos_renyi_graph(x, 0.5, directed=True),
         # lambda x: to_directed(nx.barabasi_albert_graph(x, m=int(x/2.0))),
+        lambda x: random_fixed_edge_num(x, 0.5)
         ]
 
     data_shape = (max_size - min_size + 1, len(graph_types), num_samples, 3)
@@ -160,16 +198,17 @@ if __name__ == '__main__':
         # Iterate over graph types
         for j, graph_type in enumerate(graph_types):
             # Sample a given number of random graphs
-            for k, sample in enumerate(range(num_samples)):
-                print(f'{num_nodes},{j},{sample}')
-                # Make graph
-                rg = graph_type(num_nodes)
-                source = 0
-                target = num_nodes - 1
-                # Get all times
-                sample_times = run_all(rg, source, target, num_nodes)
-                times[i, j, k, :] = sample_times
-                print('------')
+            # PARALLEL
+            rg = graph_type(num_nodes)
+            results = [pool.apply_async(one_sample, args=(rg, ))
+                       for x in range(num_samples)]
+            for k, sample_times in enumerate(results):
+                times[i, j, k, :] = sample_times.get()
+            # SEQUENTIAL
+            #for k, sample in enumerate(range(num_samples)):
+            #    rg = graph_type(num_nodes)
+            #    sample_times = one_sample(rg)
+            #    times[i, j, k, :] = sample_times
             print('=======')
 
     # Plotting
