@@ -30,7 +30,9 @@ def run_nx(rg, source, target):
     paths = [tuple(p) for p in nx.all_simple_paths(rg, source, target)]
     #paths2 = [tuple(p) for p in nx.shortest_simple_paths(rg, source, target)]
     #assert(set(paths) == set(paths2))
-
+    mid = time.time()
+    print(f'NX: {(mid-start):.2f}s')
+    print(f'NX found {len(paths)} paths')
     # Now build a path tree from the paths and calculate probabilities
     pt = PathsTree(paths)
     path_probs = pt.path_probabilities()
@@ -38,8 +40,8 @@ def run_nx(rg, source, target):
     print(f'NX prob {pr}')
     # Save the time it took the calculate
     end = time.time()
+    print(f'NX: {(end-start):.2f}s')
     elapsed = end - start
-    print(f'NX: {elapsed:.2f}s')
     return elapsed
 
 
@@ -93,7 +95,7 @@ def run_pg_cfpg(rg, source, target):
         if not new_paths:
             tf = 0
             break
-        tfs += [exists_property(p, 5) for p in new_paths] 
+        tfs += [exists_property(p, 5) for p in new_paths]
         nsamples += batch
         tf = ht.test(tfs)
     print(f'CFPG: {tf} based on {nsamples} samples')
@@ -128,9 +130,10 @@ def to_directed(G):
 
 def run_all(rg, source, target, num_nodes):
     times = np.zeros(3)
-    # Run NX
-    nx_elapsed = run_nx(rg, source, target)
-    times[0] = nx_elapsed
+    if num_nodes < 15:
+        # Run NX
+        nx_elapsed = run_nx(rg, source, target)
+        times[0] = nx_elapsed
     # Run PG / CFPG
     pg_elapsed, cfpg_elapsed = run_pg_cfpg(rg, source, target)
     times[1] = pg_elapsed
@@ -141,7 +144,7 @@ if __name__ == '__main__':
     # Some basic parameters
     min_size = 6
     max_size = 15
-    num_samples = 10
+    num_samples = 100
 
     lengths = range(min_size, max_size+1)
     graph_types = [
@@ -152,8 +155,11 @@ if __name__ == '__main__':
     data_shape = (max_size - min_size + 1, len(graph_types), num_samples, 3)
     times = np.zeros(data_shape)
 
+    # Iterate over graph sizes
     for i, num_nodes in enumerate(range(min_size, max_size+1)):
+        # Iterate over graph types
         for j, graph_type in enumerate(graph_types):
+            # Sample a given number of random graphs
             for k, sample in enumerate(range(num_samples)):
                 print(f'{num_nodes},{j},{sample}')
                 # Make graph
@@ -163,6 +169,8 @@ if __name__ == '__main__':
                 # Get all times
                 sample_times = run_all(rg, source, target, num_nodes)
                 times[i, j, k, :] = sample_times
+                print('------')
+            print('=======')
 
     # Plotting
     plt.ion()
