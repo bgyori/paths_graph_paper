@@ -177,11 +177,11 @@ def one_sample(rg):
 
 if __name__ == '__main__':
     # Some basic parameters
-    min_size = 6
-    max_size = 15
-    num_samples = 8
+    min_size = 17
+    max_size = 20
+    num_samples = 100
 
-    pool = mp.Pool(processes=4)
+    pool = mp.Pool(processes=50)
 
     lengths = range(min_size, max_size+1)
     graph_types = [
@@ -192,6 +192,8 @@ if __name__ == '__main__':
 
     data_shape = (max_size - min_size + 1, len(graph_types), num_samples, 3)
     times = np.zeros(data_shape)
+
+    import pickle
 
     # Iterate over graph sizes
     for i, num_nodes in enumerate(range(min_size, max_size+1)):
@@ -204,12 +206,16 @@ if __name__ == '__main__':
                        for x in range(num_samples)]
             for k, sample_times in enumerate(results):
                 times[i, j, k, :] = sample_times.get()
+            with open(f'times_{min_size + i}_{j}.pkl', 'wb') as fh:
+                res = (min_size, max_size, num_samples, times)
+                pickle.dump(res, fh)
             # SEQUENTIAL
             #for k, sample in enumerate(range(num_samples)):
             #    rg = graph_type(num_nodes)
             #    sample_times = one_sample(rg)
             #    times[i, j, k, :] = sample_times
             print('=======')
+
 
     # Plotting
     plt.ion()
